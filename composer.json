@@ -1,5 +1,5 @@
 {
-    "name": "apache/thrift",
+    "name": "robberphex/thrift",
     "description": "Apache Thrift RPC system",
     "homepage": "http://thrift.apache.org/",
     "type": "library",
@@ -26,5 +26,8 @@
         "branch-alias": {
             "dev-master": "1.0.x-dev"
         }
+    },
+    "replace": {
+        "apache/thrift":"0.9.*"
     }
 }
