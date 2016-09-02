@@ -87,13 +87,13 @@ class TCurlClient extends TTransport
    * Make a new HTTP client.
    *
    * @param string $host
-   * @param int    $port
+   * @param int $port
    * @param string $uri
    */
-  public function __construct($host, $port=80, $uri='', $scheme = 'http')
+  public function __construct($host, $port = 80, $uri = '', $scheme = 'http')
   {
     if ((TStringFuncFactory::create()->strlen($uri) > 0) && ($uri{0} != '/')) {
-      $uri = '/'.$uri;
+      $uri = '/' . $uri;
     }
     $this->scheme_ = $scheme;
     $this->host_ = $host;
@@ -145,7 +145,7 @@ class TCurlClient extends TTransport
   /**
    * Read some data into the array.
    *
-   * @param int    $len How much to read
+   * @param int $len How much to read
    * @return string The data that has been read
    * @throws TTransportException if cannot read any more data
    */
@@ -164,7 +164,7 @@ class TCurlClient extends TTransport
   /**
    * Writes some data into the pending buffer
    *
-   * @param string $buf  The data to write
+   * @param string $buf The data to write
    * @throws TTransportException if writing fails
    */
   public function write($buf)
@@ -179,39 +179,56 @@ class TCurlClient extends TTransport
    */
   public function flush()
   {
+    $error = '';
     if (!self::$curlHandle) {
       register_shutdown_function(array('Thrift\\Transport\\TCurlClient', 'closeCurlHandle'));
       self::$curlHandle = curl_init();
-      curl_setopt(self::$curlHandle, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt(self::$curlHandle, CURLOPT_BINARYTRANSFER, true);
-      curl_setopt(self::$curlHandle, CURLOPT_USERAGENT, 'PHP/TCurlClient');
-      curl_setopt(self::$curlHandle, CURLOPT_CUSTOMREQUEST, 'POST');
-      curl_setopt(self::$curlHandle, CURLOPT_FOLLOWLOCATION, true);
-      curl_setopt(self::$curlHandle, CURLOPT_MAXREDIRS, 1);
+      curl_setopt_array(
+        self::$curlHandle,
+        [
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_BINARYTRANSFER => true,
+          CURLOPT_USERAGENT => 'PHP/TCurlClient',
+          CURLOPT_CUSTOMREQUEST => 'POST',
+          CURLOPT_FOLLOWLOCATION => true,
+          CURLOPT_MAXREDIRS => 1,
+        ]
+      );
     }
     // God, PHP really has some esoteric ways of doing simple things.
-    $host = $this->host_.($this->port_ != 80 ? ':'.$this->port_ : '');
-    $fullUrl = $this->scheme_."://".$host.$this->uri_;
+    $host = $this->host_ . ($this->port_ != 80 ? ':' . $this->port_ : '');
+    $fullUrl = $this->scheme_ . "://" . $host . $this->uri_;
 
     $headers = array('Accept: application/x-thrift',
-                     'Content-Type: application/x-thrift',
-                     'Content-Length: '.TStringFuncFactory::create()->strlen($this->request_));
+      'Content-Type: application/x-thrift',
+      'Content-Length: ' . TStringFuncFactory::create()->strlen($this->request_));
     curl_setopt(self::$curlHandle, CURLOPT_HTTPHEADER, $headers);
 
     if ($this->timeout_ > 0) {
       curl_setopt(self::$curlHandle, CURLOPT_TIMEOUT, $this->timeout_);
     }
-    curl_setopt(self::$curlHandle, CURLOPT_POSTFIELDS, $this->request_);
+    curl_setopt_array(
+      self::$curlHandle,
+      [
+        CURLOPT_POSTFIELDS => $this->request_,
+        CURLOPT_URL => $fullUrl,
+      ]
+    );
     $this->request_ = '';
 
-    curl_setopt(self::$curlHandle, CURLOPT_URL, $fullUrl);
     $this->response_ = curl_exec(self::$curlHandle);
+    if ($this->response_) {
+      $http_code = curl_getinfo(self::$curlHandle, CURLINFO_HTTP_CODE);
+      if ($http_code >= 400) {
+        $error = 'TCurlClient: Could not connect to ' . $fullUrl . ' : http_code' . $http_code;
+      }
+    } else {
+      $error = 'TCurlClient: Could not connect to ' . $fullUrl . ' : ' . curl_error(self::$curlHandle);
+    }
 
-    // Connect failed?
-    if (!$this->response_) {
+    if (empty($error)) {
       curl_close(self::$curlHandle);
       self::$curlHandle = null;
-      $error = 'TCurlClient: Could not connect to '.$fullUrl;
       throw new TTransportException($error, TTransportException::NOT_OPEN);
     }
   }
