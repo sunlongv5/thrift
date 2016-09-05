@@ -226,7 +226,7 @@ class TCurlClient extends TTransport
       $error = 'TCurlClient: Could not connect to ' . $fullUrl . ' : ' . curl_error(self::$curlHandle);
     }
 
-    if (empty($error)) {
+    if (!empty($error)) {
       curl_close(self::$curlHandle);
       self::$curlHandle = null;
       throw new TTransportException($error, TTransportException::NOT_OPEN);
