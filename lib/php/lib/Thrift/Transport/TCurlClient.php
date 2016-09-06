@@ -220,7 +220,7 @@ class TCurlClient extends TTransport
     if ($this->response_) {
       $http_code = curl_getinfo(self::$curlHandle, CURLINFO_HTTP_CODE);
       if ($http_code >= 400) {
-        $error = 'TCurlClient: Could not connect to ' . $fullUrl . ' : http_code' . $http_code;
+        $error = 'TCurlClient: Could not connect to ' . $fullUrl . ' : http_code : ' . $http_code;
       }
     } else {
       $error = 'TCurlClient: Could not connect to ' . $fullUrl . ' : ' . curl_error(self::$curlHandle);
