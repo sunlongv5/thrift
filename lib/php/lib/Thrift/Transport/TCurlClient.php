@@ -192,6 +192,7 @@ class TCurlClient extends TTransport
           CURLOPT_CUSTOMREQUEST => 'POST',
           CURLOPT_FOLLOWLOCATION => true,
           CURLOPT_MAXREDIRS => 1,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_0,
         ]
       );
     }
