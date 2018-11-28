@@ -157,6 +157,10 @@ class THttpClient extends TTransport
    */
   public function read($len)
   {
+    if($len > 123456){
+      throw new TTransportException('THttpClient: timed out reading '.$len.' bytes from '.$this->host_.':'.$this->port_.$this->uri_, TTransportException::TIMED_OUT);
+
+    }
     $data = @fread($this->handle_, $len);
     if ($data === FALSE || $data === '') {
       $md = stream_get_meta_data($this->handle_);
